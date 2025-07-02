@@ -160,12 +160,5 @@ def action_guide_agent(category: str, user_question: str) -> Dict[str, Union[str
             ],
             stream=True  # ✅ 여기 추가!
         )
-        # 단계별 분리 (예: "1. xxx\n2. xxx\n3. xxx")
-        raw_text = response.choices[0].message.content.strip()
-        steps = [line.strip() for line in raw_text.split('\n') if line.strip() and any(char.isdigit() for char in line)]
-
-    return {
-        "category": category,
-        "user_question": user_question,
-        "steps": steps
-    }
+        
+    return response
