@@ -1,4 +1,4 @@
-# 💡 설치 필요 시 (주석 해제)
+# 설치 필요 시 (주석 해제)
 # !pip install transformers datasets
 
 import pandas as pd
@@ -10,7 +10,7 @@ import numpy as np
 from datasets import load_metric
 from sklearn.metrics import confusion_matrix, classification_report
 
-# ✅ 1. 9개 라벨 정의 및 예시 데이터 구성
+# 1. 9개 라벨 정의 및 예시 데이터 구성
 label_map = {
     0: "초상권 침해",
     1: "동의 없는 개인정보 수집",
@@ -230,7 +230,7 @@ train_texts, val_texts, train_labels, val_labels = train_test_split(
     df['text'].tolist(), df['label'].tolist(), test_size=0.2, random_state=42
 )
 
-# ✅ 2. 데이터셋 클래스 정의
+# 2. 데이터셋 클래스 정의
 class LegalDataset(Dataset):
     def __init__(self, texts, labels, tokenizer, max_len=64):
         self.texts = texts
@@ -257,23 +257,23 @@ class LegalDataset(Dataset):
             'labels': torch.tensor(label)
         }
 
-# ✅ 3. 모델과 토크나이저 로딩
+# 3. 모델과 토크나이저 로딩
 model_name = "klue/bert-base"
 tokenizer = BertTokenizer.from_pretrained(model_name)
 model = BertForSequenceClassification.from_pretrained(model_name, num_labels=9)
 
-# ✅ 4. 데이터셋 준비
+# 4. 데이터셋 준비
 train_dataset = LegalDataset(train_texts, train_labels, tokenizer)
 val_dataset = LegalDataset(val_texts, val_labels, tokenizer)
 
-# ✅ 5. 평가 지표 설정
+# 5. 평가 지표 설정
 accuracy_metric = load_metric("accuracy")
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
     return accuracy_metric.compute(predictions=preds, references=labels)
 
-# ✅ 6. 훈련 설정
+# 6. 훈련 설정
 training_args = TrainingArguments(
     output_dir='./klue_bert_results',
     num_train_epochs=10,
@@ -295,10 +295,10 @@ trainer = Trainer(
     compute_metrics=compute_metrics
 )
 
-# ✅ 7. 학습 시작
+# 7. 학습 시작
 trainer.train()
 
-# ✅ 8. 혼동 행렬 및 평가 리포트 출력
+# 8. 혼동 행렬 및 평가 리포트 출력
 model.eval()
 all_preds, all_labels = [], []
 for batch in val_dataset:
@@ -323,11 +323,11 @@ print(classification_report(
     target_names=[label_map[i] for i in range(len(label_map))]
 ))
 
-# ✅ 9. 모델 저장
+# 9. 모델 저장
 model.save_pretrained("./saved_klue_bert")
 tokenizer.save_pretrained("./saved_klue_bert")
 
-# ✅ 10. 추론 함수
+# 10. 추론 함수
 def classify_legal_issue(text):
     model.eval()
     inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=64)
@@ -336,6 +336,6 @@ def classify_legal_issue(text):
     pred = torch.argmax(outputs.logits, dim=1).item()
     return label_map[pred]
 
-# ✅ 11. 테스트 예시
+# 11. 테스트 예시
 example = "앱을 설치했더니 동의 없이 위치정보를 수집했어요"
 print(f"\n입력: {example}\n예측된 유형: {classify_legal_issue(example)}")
