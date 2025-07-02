@@ -1,16 +1,15 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Union
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def action_guide_agent(category: str, user_question: str) -> str:
+def action_guide_agent(category: str, user_question: str) -> Dict[str, Union[str, List[str]]]:
     """
     예측된 법률 카테고리와 사용자 질문을 기반으로
     신고 및 대응 절차를 반환하는 함수.
@@ -23,7 +22,7 @@ def action_guide_agent(category: str, user_question: str) -> str:
             "3. 방송통신심의위원회 신고: 온라인 게시물의 심의 및 삭제 요청 가능합니다.\n"
             "→ https://www.kocsc.or.kr/"
         ),
-        "동의 없는 개인정보 수집": (
+          "동의 없는 개인정보 수집": (
         "1. 먼저 개인정보 수집 사실을 입증할 수 있는 자료(화면 캡처, 수신 내역 등)를 확보하세요.\n"
         "2. 개인정보보호법 제15조에 따라 개인정보를 수집하려면 정보주체의 명시적인 동의가 있어야 하며,\n"
         "   동의 없이 수집한 경우 이는 명백한 법 위반입니다.\n"
@@ -57,7 +56,7 @@ def action_guide_agent(category: str, user_question: str) -> str:
 
 
         ),
-        "	CCTV 과잉촬영": (
+        "CCTV 과잉촬영": (
         "1. CCTV가 설치된 장소에서 불필요하게 촬영되거나 사생활이 침해되는 경우,\n"
         "   - 우선 촬영 범위, 안내판 설치 여부, 녹음 금지 여부 등 관련 증거(사진, 동영상, 녹취 등)를 확보하세요.\n"
         "2. 고정형 영상정보처리기기 설치 및 운영은 개인정보보호법 제25조와 관련 고시에 따라 엄격히 관리되어야 하며,\n"
@@ -102,15 +101,6 @@ def action_guide_agent(category: str, user_question: str) -> str:
         "   - 요청 기록(이메일, 등기 발송증명), 회신 내역 등은 증거로 보관하세요."
        ),
 
-        "광고성 정보 수신": (
-        "1. 광고성 정보 수신을 원하지 않는다는 의사를 발신자(업체)에 명확히 전달하세요.\n"
-        "   - 수신 거부 요청 시에도 지속적으로 광고가 올 경우 불법 스팸일 가능성이 있습니다.\n"
-        "2. 『정보통신망 이용촉진 및 정보보호 등에 관한 법률』에 따라,\n"
-        "   - 광고성 정보 수신 동의는 반드시 명확하고 구체적이어야 하며, 언제든 철회할 수 있습니다.\n"
-        "3. 계속된 불법 광고성 정보 수신 시,\n"
-        "   - 한국인터넷진흥원(KISA)의 불법 스팸 신고센터(https://www.spamcop.or.kr)에 신고하여 조치를 요청하세요.\n"
-        "4. 스팸 문자·전화 피해가 심각하면, 경찰청 사이버안전국에 추가 신고도 가능합니다."
-        ),
         "계정/비밀번호 관련 문제": (
         "1. 계정 정보가 유출되거나 의심되는 경우 즉시 비밀번호를 변경하고,\n"
         "   - 가능하면 2단계 인증(OTP, 문자 인증 등)을 반드시 설정하여 보안을 강화하세요.\n"
@@ -119,42 +109,63 @@ def action_guide_agent(category: str, user_question: str) -> str:
         "3. 동일한 피해가 반복될 경우,\n"
         "   - 개인정보보호법 및 정보통신망법에 따라 개인정보 유출 신고를 개인정보보호위원회 또는 한국인터넷진흥원(KISA)에 할 수 있습니다.\n"
         "4. 악성 해킹이나 금융 피해가 의심되면, 경찰 사이버수사대에 신속히 신고하여 수사 협조를 받으세요."
-)
+       ),
+
+        "위치정보 수집/유출": (
+        "1. 내 위치정보가 무단으로 수집되거나 제3자에게 넘어간 정황이 있다면, 먼저 해당 앱이나 서비스에서 수집 내역을 확인하고, 캡처 등으로 증거를 확보하세요.\n"
+        "2. 위치정보를 수집·제공한 사업자에게 서면이나 이메일로 정보 삭제 요청 및 유출 경위 설명을 요구하세요.\n"
+        "3. 위치정보사업자 또는 위치기반서비스사업자는 『위치정보 보호법』에 따라 동의 없이 수집·제공하면 법적 책임이 있습니다.\n"
+        "4. 요청에 응답하지 않거나 부정확한 답변을 할 경우, 방송통신위원회 민원센터 또는 경찰청 사이버수사국에 신고할 수 있습니다.\n"
+        "5. 추가 피해(스토킹, 협박 등)가 우려되는 경우, 즉시 경찰에 신고하고 위치정보 사용 제한 조치를 요구하세요."
+       ),  
+       
+        "개인정보 열람·정정 요구 거부": (
+        "1. 내가 제공한 개인정보를 열람하거나 정정하려 했는데 사업자가 이를 부당하게 거부한 경우, 먼저 요청 내역을 문서나 이메일로 다시 남겨 기록을 확보하세요.\n"
+        "2. 개인정보보호법에 따라 이용자는 자신의 개인정보에 대해 열람·정정할 권리가 있으며, 사업자는 이에 10일 이내에 응답해야 합니다.\n"
+        "3. 재요청에도 응답이 없거나 거부 사유가 불명확하다면, 개인정보보호위원회 홈페이지(https://www.pipc.go.kr)를 통해 민원을 제기할 수 있습니다.\n"
+        "4. 특히 개인정보로 인해 부정확한 서비스 제공이나 불이익이 발생했다면, 관련 피해 사실을 함께 첨부하여 시정을 요구하세요.\n"
+        "5. 추후 법적 대응이 필요할 수 있으므로 요청 내역, 회신 내용 등은 모두 증거로 보관해두는 것이 좋습니다."
+       )
+
     }
 
     if category in guide:
-        return guide[category]
+        guide_text = guide[category]
+        steps = [line.strip() for line in guide_text.split("\n") if line.strip()]
+    
+    else:
+        # GPT 호출
+        prompt = f"""
+        당신은 개인정보 보호 및 디지털 권리 침해에 대한 법률 상담 전문가입니다.
+        아래는 사용자 질문과 예측된 법률 카테고리입니다.
+        이 정보에 기반하여 '신고 및 대응 절차'를 구체적이고 단계적으로 작성해주세요.
 
-    # GPT에게 대응 절차 생성 요청
-    prompt = f"""
-     당신은 개인정보 보호 및 디지털 권리 침해에 대한 법률 상담 전문가입니다.
-     아래는 사용자 질문과 예측된 법률 카테고리입니다.  
-     이 정보에 기반하여 '신고 및 대응 절차'를 구체적이고 단계적으로 작성해주세요.
+        [예측된 법률 카테고리]
+        {category}
 
-     [예측된 법률 카테고리]
-     {category}
+        [사용자 질문]
+        {user_question}
 
-     [사용자 질문]
-     {user_question}
+        요구사항:
+        - 신고 방법, 기관 이름, 소송 등 실질적인 대응 조치를 단계별로 안내하세요.
+        - 관련 기관 웹사이트나 전화번호가 있다면 포함하세요.
+        - 사용자가 실제 행동할 수 있도록 구체적으로 작성하세요.
+        """
 
-   요구사항:
-   - 신고 방법, 기관 이름, 소송 등 실질적인 대응 조치를 단계별로 안내하세요.
-   - 관련 기관 웹사이트나 전화번호가 있다면 포함하세요. 
-   - 사용자가 실제 행동할 수 있도록 구체적으로 작성하세요.
-   """
+        response = client.chat.completions.create(
+            model="gpt-4.1",
+            messages=[
+                {"role": "system", "content": "당신은 법률 상담 전문가입니다."},
+                {"role": "user", "content": prompt}
+            ],
+            stream=True  # ✅ 여기 추가!
+        )
+        # 단계별 분리 (예: "1. xxx\n2. xxx\n3. xxx")
+        raw_text = response.choices[0].message.content.strip()
+        steps = [line.strip() for line in raw_text.split('\n') if line.strip() and any(char.isdigit() for char in line)]
 
-    response = client.chat.completions.create(
-        model="gpt-4.1",
-        messages=[
-            {"role": "system", "content": "당신은 법률 상담 전문가입니다."},
-            {"role": "user", "content": prompt}
-        ]
-    )
-
-    return response.choices[0].message.content.strip()
-
-if __name__ == "__main__":
-    category = "제3자 무단 제공"
-    user_question = "회사에서 제 개인정보를 허락 없이 다른 회사에 제공했어요"
-    result = action_guide_agent(category, user_question)
-    print(result)
+    return {
+        "category": category,
+        "user_question": user_question,
+        "steps": steps
+    }
