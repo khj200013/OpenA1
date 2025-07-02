@@ -1,28 +1,24 @@
 # 표준 라이브러리
 import os
 import sys
+import time
 
 # 외부 라이브러리
 import streamlit as st
-from openai import OpenAI
-from dotenv import load_dotenv
-import torch
-from transformers import BertTokenizer, BertForSequenceClassification
 
 # sys.path 추가
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Main')))
 
 # 내부 모듈
-from model_Frontend_v2 import classify_legal_issue
+from model_Frontend_v3 import classify_legal_issue, load_model
 from ui_components import (
     render_user_input,
     render_user_message,
     render_assistant_message,
-    render_assistant_message_stream
+    render_assistant_message_stream,
+    render_title_image,
 )
 from action_guide import action_guide_agent
-
-
 
 
 ################################################################################
@@ -49,6 +45,8 @@ st.set_page_config(
             이 AI 어시스턴트는 사용자의 상황이나 질문을 바탕으로  
             **개인정보보호법 또는 관련 규정(GDPR 등)**에 따라  
             위반 가능성을 분석하고, 관련 법령과 대응 방안을 안내합니다.
+
+            Image created by OpenAI
         """
     }
 )
@@ -59,7 +57,16 @@ st.set_page_config(
 ################################################################################
 
 
-st.title("개인정보 법률 유형 분류 챗봇")
+# 로고 이미지 출력
+render_title_image()
+
+# 모델 로딩
+if "model_loaded" not in st.session_state:
+    tokenizer, model = load_model()
+    st.session_state.tokenizer = tokenizer
+    st.session_state.model = model
+    st.session_state.model_loaded = True
+
 
 if 'openai_model' not in st.session_state:
     st.session_state.openai_model = 'gpt-4.1'
@@ -72,8 +79,12 @@ if 'messages' not in st.session_state:
 for i, msg in enumerate(st.session_state.messages):
     if msg["role"] == "system":
         continue  
-    with st.chat_message(msg['role']):
-        st.markdown(msg['content'])
+    if msg["role"] == 'user':
+        render_user_message(msg["content"])
+    elif  msg["role"] == 'assistant': 
+        render_assistant_message(msg["predicted_label"], msg["content"])
+
+
 
 # 사용자 입력/출력 + GPT 응답 출력
 if prompt := render_user_input():
@@ -83,8 +94,12 @@ if prompt := render_user_input():
     # 유저 메시지 렌더
     render_user_message(prompt)
 
+    with st.spinner("잠시만 기다려주세요...", show_time=True):
+        time.sleep(2.5)
+
+
     # 라벨 분류
-    predicted_label = classify_legal_issue(prompt)
+    predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
 
     # GPT PROMPT
     response_stream = action_guide_agent(prompt, predicted_label)
@@ -93,7 +108,7 @@ if prompt := render_user_input():
     response_text = render_assistant_message_stream(predicted_label, response_stream)
     
     # AI 메시지 session_state에 추가
-    st.session_state.messages.append({"role": "assistant", "content": response_text})
+    st.session_state.messages.append({"role": "assistant", "predicted_label": predicted_label, "content": response_text})
 
 ################################################################################
 ################################[ 사 이 드 바 ]#################################
