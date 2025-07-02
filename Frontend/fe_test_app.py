@@ -85,18 +85,20 @@ for i, msg in enumerate(st.session_state.messages):
         render_assistant_message(msg["predicted_label"], msg["content"])
 
 
+# 사용자 입력 저장 후 rerun 처리 (stream 중 입력 방지)
+if "user_input" not in st.session_state:
+    if prompt := render_user_input():
+        st.session_state.user_input = prompt
+        st.rerun()
 
-# 사용자 입력/출력 + GPT 응답 출력
-if prompt := render_user_input():
+# GPT 응답 처리
+if "user_input" in st.session_state:
+    prompt = st.session_state.user_input
     # 사용자 메시지 session_state에 추가
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     # 유저 메시지 렌더
     render_user_message(prompt)
-
-    with st.spinner("잠시만 기다려주세요...", show_time=True):
-        time.sleep(2.5)
-
 
     # 라벨 분류
     predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
@@ -109,6 +111,10 @@ if prompt := render_user_input():
     
     # AI 메시지 session_state에 추가
     st.session_state.messages.append({"role": "assistant", "predicted_label": predicted_label, "content": response_text})
+
+    # user_input 삭제 후 rerun
+    del st.session_state.user_input
+    st.rerun()
 
 ################################################################################
 ################################[ 사 이 드 바 ]#################################

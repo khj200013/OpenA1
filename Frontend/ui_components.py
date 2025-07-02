@@ -32,7 +32,20 @@ def render_assistant_message(predicted_label, response):
         st.markdown(response)
 
 def render_assistant_message_stream(predicted_label, stream):
+    full_response = ""
     with st.chat_message("assistant", avatar=assist_icon):
         st.markdown(f"🧠 **예측된 유형:** `{predicted_label}`")
-        response = st.write_stream(stream)
-    return response
+        response_container = st.empty()
+
+        try:
+            for chunk in stream:
+                delta = chunk.choices[0].delta
+                content = getattr(delta, "content", None)
+                if content is not None:
+                    full_response += content
+                    response_container.markdown(full_response + "▍")
+        except Exception as e:
+            st.error(f"❌ 스트리밍 중 오류 발생: {e}")
+            full_response = "응답을 받지 못했습니다."
+
+    return full_response
