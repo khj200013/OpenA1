@@ -154,7 +154,7 @@ print(cm)
 print("\nClassification Report:")
 print(classification_report(all_labels, all_preds, target_names=[label_map[i] for i in range(3)]))
 
-# ✅ 10. 모델 저장 (모델 + 토크나이저)
+# 10. 모델 저장 (모델 + 토크나이저)
 model.save_pretrained("./saved_kobert_model")
 tokenizer.save_pretrained("./saved_kobert_model")
 
