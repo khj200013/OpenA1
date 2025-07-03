@@ -26,7 +26,6 @@ def create_vector_store(client, file_id, wait_sec=15):
     time.sleep(wait_sec)
     return vector_store.id
 
-
 def extract_pipc_articles(text):
     chunks = re.split(r"[,<>\n]", text)
     current_law = None
@@ -58,24 +57,44 @@ def clean_file_search_output(text):
     text = re.sub(r'\n\s*\n+', '\n\n', text)
 
     lines = text.split('\n')
-    merged_lines = []
-    skip_next = False
+    cleaned_lines = []
+    buffer_line = ''
 
-    for i in range(len(lines)):
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        if re.match(r'^\d+[\.\)]', line) or re.match(r'^[가-하][\.\)]', line):
+            if buffer_line:
+                cleaned_lines.append(buffer_line.strip())
+                buffer_line = ''
+            cleaned_lines.append(line)
+        else:
+            if buffer_line:
+                buffer_line += ' ' + line
+            else:
+                buffer_line = line
+
+    if buffer_line:
+        cleaned_lines.append(buffer_line.strip())
+
+    final_lines = []
+    skip_next = False
+    for i in range(len(cleaned_lines)):
         if skip_next:
             skip_next = False
             continue
 
-        current_line = lines[i].strip()
-
-        if re.match(r'^\d+\.\s*$', current_line) and i + 1 < len(lines):
-            next_line = lines[i + 1].strip()
-            merged_lines.append(f"{current_line} {next_line}")
+        current_line = cleaned_lines[i].strip()
+        if re.match(r'^\d+\.\s*$', current_line) and i + 1 < len(cleaned_lines):
+            next_line = cleaned_lines[i + 1].strip()
+            final_lines.append(f"{current_line} {next_line}")
             skip_next = True
         else:
-            merged_lines.append(current_line)
+            final_lines.append(current_line)
 
-    return '\n'.join(merged_lines)
+    return '\n'.join(final_lines)
 
 def file_search_query(client, user_input, vector_store_id):
     extract_context = extract_pipc_articles(user_input)

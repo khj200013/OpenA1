@@ -126,8 +126,6 @@ if 'messages' not in st.session_state:
     st.session_state.messages = []
 
 
-
-
 # 기존 메시지 출력
 for i, msg in enumerate(st.session_state.messages):
     if msg["role"] == "system":
