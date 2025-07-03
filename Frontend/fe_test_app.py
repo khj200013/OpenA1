@@ -94,15 +94,14 @@ if "history" not in st.session_state:
         "개인정보 열람·정정 요구 거부": []
     }
 
-if "show_history" in st.session_state:
-    info = st.session_state.show_history
-    entries = st.session_state.history[info["label"]]
-    for e in entries:
-        if e["question"] == info["question"]:
-            render_user_message(e["question"])
-            render_assistant_message(info["label"], e["answer"])
-            break
-    del st.session_state.show_history
+# history 초기화
+from sidebar import LABELS
+if "history" not in st.session_state:
+    st.session_state.history = { label: [] for label in LABELS }
+
+# 질문→답변 생성 로직
+if "user_input" in st.session_state:
+    prompt = st.session_state.user_input
 
 # 모델 로딩
 if "model_loaded" not in st.session_state:

@@ -18,29 +18,40 @@ LABELS = [
 # sidebar.py
 
 def render_history_sidebar():
+    # history 초기화
     if "history" not in st.session_state:
-        st.session_state.history = { label:[] for label in LABELS }
+        st.session_state.history = { label: [] for label in LABELS }
 
     st.sidebar.empty()
     with st.sidebar:
         render_lock_icon(size_px=100, color="#2E86AB")
 
         # 1) 카테고리 선택
-        selected = st.selectbox("📌 분류 사례", options=LABELS, key="selected_label")
+        selected_label = st.selectbox(
+            "📌 분류 사례",
+            options=LABELS,
+            key="selected_label"
+        )
         st.markdown("---")
 
-        # 2) 질문 목록 (dict 리스트)
-        entries = st.session_state.history.get(selected, [])
+        # 2) 해당 카테고리의 저장된 Q&A 리스트
+        entries = st.session_state.history[selected_label]
 
         if entries:
-            # 질문 리스트만 뽑아내서 selectbox
+            st.markdown(f"### {selected_label}에 저장된 질문들")
+
+            # 3) 질문만 뽑아 selectbox
             qs = [e["question"] for e in entries]
-            selected_q = st.selectbox("📝 저장된 질문", options=qs, key="selected_question")
-            
-            # 3) 해당 질문에 대한 답변 버튼
-            if st.button("답변 보기"):
-                # 선택된 질문을 세션에 기록
-                st.session_state.show_history = {"label": selected, "question": selected_q}
+            selected_q = st.selectbox(
+                "📝 저장된 질문",
+                options=qs,
+                key="selected_question"
+            )
+
+            # 4) 질문 불러오기 버튼: user_input에 세팅 후 rerun
+            if st.button("질문 불러오기", key="btn_load"):
+                st.session_state.user_input = selected_q
+                st.rerun()
         else:
             st.write("아직 기록된 질문이 없습니다.")
 
