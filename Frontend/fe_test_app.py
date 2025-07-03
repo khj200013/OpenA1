@@ -103,6 +103,9 @@ if "user_input" in st.session_state:
     # 라벨 분류
     predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
 
+    # 분류된 라벨에 질문 저장.
+    st.session_state.history[predicted_label].append(prompt)
+    
     # GPT PROMPT
     response_stream = action_guide_agent(prompt, predicted_label)
 
@@ -120,28 +123,24 @@ if "user_input" in st.session_state:
 ################################[ 사 이 드 바 ]#################################
 ################################################################################
 
-st.sidebar.empty() # 사이드바 초기화
-with st.sidebar:
-    # 상단 이미지 
-    st.image('https://www.kamco.or.kr/portal/img/sub/01/emot1_new_001.png')
+from sidebar import render_history_sidebar
 
-    # FAQ SelectBox
-    violation_type = st.selectbox(
-        '📌 분류 선택',
-        (
-            '1. 초상권 침해',
-            '2. 동의 없는 개인정보 수집',
-            '3. 목적 외 이용',
-            '4. 제3자 무단 제공',
-            '5. CCTV 과잉촬영',
-            '6. 정보 유출',
-            '7. 파기 미이행',
-            '8. 광고성 정보 수신',
-            '9. 계정/비밀번호 관련 문제',
-            '10. 위치정보 수집/유출',
-            '11. 개인정보 열람·정정 요구 거부',
-        )
-    )
 
-    st.markdown(f"선택한 유형: **{violation_type}**")
+# 히스토리용 딕셔너리
+if "history" not in st.session_state:
+    st.session_state.history = {
+        "초상권 침해": [],
+        "동의 없는 개인정보 수집": [],
+        "목적 외 이용": [],
+        "제3자 무단 제공": [],
+        "CCTV 과잉촬영": [],
+        "정보 유출": [],
+        "파기 미이행": [],
+        "광고성 정보 수신": [],
+        "계정/비밀번호 관련 문제": [],
+        "위치정보 수집/유출": [],
+        "개인정보 열람·정정 요구 거부": []
+    }
+
+render_history_sidebar()
 
