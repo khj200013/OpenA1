@@ -7,11 +7,28 @@ user_icon = image_base_path / 'user_icon_image.png'
 assist_icon = image_base_path / 'assistant_icon_image.png'
 title_img = image_base_path / 'logo_01.png'
 
-def render_raw_info(law_info):
+def render_law_info(law_info, file_search_result):
     with st.expander("📘 예측된 법률 정보", expanded=True):
         st.markdown(f"**관련 법 조항:** {law_info['law']}")
         st.markdown(f"**요약 설명:** {law_info['summary']}")
         st.markdown(f"**위반 가능성:** {law_info['violation']}")
+
+        if file_search_result:
+            st.markdown("**📄 개인정보보호법 조항:**")
+            st.markdown(
+                f"""
+                <div style="white-space: pre-wrap; word-wrap: break-word;
+                            border: 1px solid #ddd;
+                            border-radius: 0.5rem;
+                            padding: 0.75rem;
+                            background-color: #f9f9f9;
+                            margin-top: 0.5rem;
+                            margin-bottom: 0.5rem;">
+                {file_search_result}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 def render_title_image():
     with open(title_img, "rb") as f:

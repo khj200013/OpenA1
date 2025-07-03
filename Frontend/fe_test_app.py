@@ -6,23 +6,38 @@ import time
 # 외부 라이브러리
 import streamlit as st
 
-# sys.path 추가
+# sys.path 추가(OpenA1\Main 폴더)
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Main')))
 
 # 내부 모듈
+## 사이드바
 from sidebar import render_history_sidebar
+
+## FileSearch 모듈
+from file_search_utils import file_search_query, create_file, create_vector_store
+
+## 유형 분류 모델 관련 모듈
 from model_Frontend_v3 import classify_legal_issue, load_model
+
+## UI렌더 관련 모듈
 from ui_components import (
     render_user_input,
     render_user_message,
     render_assistant_message,
     render_assistant_message_stream,
     render_title_image,
-    render_raw_info,
+    render_law_info,
 )
+
+## GPT(AI) 연동 관련 모듈
+## law_info_ExceptDB -> GPT가 관련 법 조항을 찾고 내용 요약, 위반 가능성 설명
+## action_guide -> 위반된 법 조항과 관련해 대응 절차 안내
 from action_guide import action_guide_agent
 from law_info_ExceptDB import get_law_info
+from openai_utils import get_openai_client
 
+# Client 설정
+client = get_openai_client()
 
 ################################################################################
 ################################ Page Config ###################################
@@ -65,17 +80,28 @@ render_title_image()
 
 # 모델 로딩
 if "model_loaded" not in st.session_state:
-    tokenizer, model = load_model()
-    st.session_state.tokenizer = tokenizer
-    st.session_state.model = model
-    st.session_state.model_loaded = True
+    with st.spinner("모델 및 벡터 스토어를 초기화하는 중입니다...잠시만 기다려주세요.."):
+        tokenizer, model = load_model()
+        st.session_state.tokenizer = tokenizer
+        st.session_state.model = model
+        st.session_state.model_loaded = True
 
+        # File Search용 설정
+        file_path = "./개인정보보호법.pdf"
+        file_id = create_file(client, file_path)
+        vector_store_id = create_vector_store(client, file_id)
+
+        # 설정 내용 session_state에 저장
+        st.session_state.file_id = file_id
+        st.session_state.vector_store = vector_store_id
 
 if 'openai_model' not in st.session_state:
     st.session_state.openai_model = 'gpt-4.1'
 
 if 'messages' not in st.session_state:
     st.session_state.messages = []
+
+
 
 
 # 기존 메시지 출력
@@ -86,7 +112,7 @@ for i, msg in enumerate(st.session_state.messages):
         render_user_message(msg["content"])
     elif  msg["role"] == 'assistant': 
         if msg["law_info"]:
-            render_raw_info(msg["law_info"])
+            render_law_info(msg["law_info"], msg["file_search_result"])
         render_assistant_message(msg["predicted_label"], msg["content"])
 
 
@@ -114,8 +140,11 @@ if "user_input" in st.session_state:
     # GPT PROMPT
     with st.spinner("🔎 법률 정보 분석 중입니다..."):
         law_info = get_law_info(predicted_label, prompt)
-    render_raw_info(law_info)
+        # File Search
+        file_search_result = file_search_query(client, law_info['law'], st.session_state.vector_store)
 
+    # Law info + File search 값 출력
+    render_law_info(law_info, file_search_result)
 
     response_stream = action_guide_agent(prompt, predicted_label)
 
@@ -126,6 +155,7 @@ if "user_input" in st.session_state:
     st.session_state.messages.append({"role": "assistant", 
                                       "predicted_label": predicted_label, 
                                       "law_info" : law_info,
+                                      "file_search_result" : file_search_result,
                                       "content": response_text})
 
     # user_input 삭제 후 rerun
