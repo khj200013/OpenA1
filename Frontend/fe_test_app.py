@@ -78,6 +78,16 @@ st.set_page_config(
 # 로고 이미지 출력
 render_title_image()
 
+if "show_history" in st.session_state:
+    info = st.session_state.show_history
+    entries = st.session_state.history[info["label"]]
+    for e in entries:
+        if e["question"] == info["question"]:
+            render_user_message(e["question"])
+            render_assistant_message(info["label"], e["answer"])
+            break
+    del st.session_state.show_history
+
 # 모델 로딩
 if "model_loaded" not in st.session_state:
     with st.spinner("모델 및 벡터 스토어를 초기화하는 중입니다...잠시만 기다려주세요.."):
@@ -134,9 +144,6 @@ if "user_input" in st.session_state:
     # 라벨 분류
     predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
 
-    # 분류된 라벨에 질문 저장.
-    st.session_state.history[predicted_label].append(prompt)
-
     # GPT PROMPT
     with st.spinner("🔎 법률 정보 분석 중입니다..."):
         law_info = get_law_info(predicted_label, prompt)
@@ -157,7 +164,12 @@ if "user_input" in st.session_state:
                                       "law_info" : law_info,
                                       "file_search_result" : file_search_result,
                                       "content": response_text})
-
+    # 질문 + 답변 저장
+    st.session_state.history[predicted_label].append({
+        "question": prompt,
+        "answer": response_text
+    })
+    
     # user_input 삭제 후 rerun
     del st.session_state.user_input
     st.rerun()
