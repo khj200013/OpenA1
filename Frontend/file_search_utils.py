@@ -26,6 +26,7 @@ def create_vector_store(client, file_id, wait_sec=15):
     time.sleep(wait_sec)
     return vector_store.id
 
+# 법 조항 찾아서 텍스트 분리
 def extract_pipc_articles(text):
     chunks = re.split(r"[,<>\n]", text)
     current_law = None
@@ -34,28 +35,36 @@ def extract_pipc_articles(text):
     for chunk in chunks:
         chunk = chunk.strip()
 
-        match_full = re.match(r"(개인정보보호법)\s*제\s*(\d+)\s*조", chunk)
+        match_full = re.match(r"(개인\s*정보\s*보호\s*법|개인정보보호법)\s*제\s*(\d+)\s*조", chunk)
         if match_full:
-            current_law = match_full.group(1)
+            current_law = "개인정보보호법"
             article = f"{current_law}제{match_full.group(2)}조"
             result.append(article)
             continue
-
-        # "제26조"처럼 앞에 법령이 생략된 경우
+        
+        # 법조항 여러개인 경우
         match_partial = re.match(r"제\s*(\d+)\s*조", chunk)
         if match_partial and current_law == "개인정보보호법":
             article = f"{current_law}제{match_partial.group(1)}조"
             result.append(article)
+            continue
 
-    return result
+        match_number_only = re.match(r"(\d+)\s*조", chunk)
+        if match_number_only and current_law == "개인정보보호법":
+            article = f"{current_law}제{match_number_only.group(1)}조"
+            result.append(article)
+            
 
+    return list(set(result))
+
+# 전체 text 공백, 줄바꿈 제거
 def clean_file_search_output(text):
     text = re.sub(r'<.*?>', '', text)
 
     text = text.strip()
 
     text = re.sub(r'\n\s*\n+', '\n\n', text)
-
+    
     lines = text.split('\n')
     cleaned_lines = []
     buffer_line = ''
@@ -97,8 +106,11 @@ def clean_file_search_output(text):
     return '\n'.join(final_lines)
 
 def file_search_query(client, user_input, vector_store_id):
+    # user_input 내 개인정보보호버
     extract_context = extract_pipc_articles(user_input)
-    print(extract_context)
+
+    if not extract_context :
+        return "질문이 입력되지 않았습니다. 질문에 법 조항명을 입력해 주시면 해당 조항의 문장만 찾아서 반환하겠습니다."
 
     # 프롬프트 구성
     query = (
