@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'M
 
 # 내부 모듈
 ## 사이드바
-from sidebar import render_history_sidebar
+from sidebar import render_history_sidebar, LABELS
 
 ## FileSearch 모듈
 from file_search_utils import file_search_query, create_file, create_vector_store
@@ -94,8 +94,7 @@ if "history" not in st.session_state:
         "개인정보 열람·정정 요구 거부": []
     }
 
-# history 초기화
-from sidebar import LABELS
+
 if "history" not in st.session_state:
     st.session_state.history = { label: [] for label in LABELS }
 
