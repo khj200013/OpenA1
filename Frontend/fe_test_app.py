@@ -63,6 +63,16 @@ st.set_page_config(
 # 로고 이미지 출력
 render_title_image()
 
+if "show_history" in st.session_state:
+    info = st.session_state.show_history
+    entries = st.session_state.history[info["label"]]
+    for e in entries:
+        if e["question"] == info["question"]:
+            render_user_message(e["question"])
+            render_assistant_message(info["label"], e["answer"])
+            break
+    del st.session_state.show_history
+
 # 모델 로딩
 if "model_loaded" not in st.session_state:
     tokenizer, model = load_model()
