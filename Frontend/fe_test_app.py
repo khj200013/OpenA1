@@ -108,9 +108,6 @@ if "user_input" in st.session_state:
     # 라벨 분류
     predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
 
-    # 분류된 라벨에 질문 저장.
-    st.session_state.history[predicted_label].append(prompt)
-
     # GPT PROMPT
     with st.spinner("🔎 법률 정보 분석 중입니다..."):
         law_info = get_law_info(predicted_label, prompt)
@@ -127,7 +124,12 @@ if "user_input" in st.session_state:
                                       "predicted_label": predicted_label, 
                                       "law_info" : law_info,
                                       "content": response_text})
-
+    # 질문 + 답변 저장
+    st.session_state.history[predicted_label].append({
+        "question": prompt,
+        "answer": response_text
+    })
+    
     # user_input 삭제 후 rerun
     del st.session_state.user_input
     st.rerun()
