@@ -10,6 +10,7 @@ import streamlit as st
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Main')))
 
 # 내부 모듈
+from sidebar import render_history_sidebar
 from model_Frontend_v3 import classify_legal_issue, load_model
 from ui_components import (
     render_user_input,
@@ -17,8 +18,10 @@ from ui_components import (
     render_assistant_message,
     render_assistant_message_stream,
     render_title_image,
+    render_raw_info,
 )
 from action_guide import action_guide_agent
+from law_info_ExceptDB import get_law_info
 
 
 ################################################################################
@@ -82,6 +85,8 @@ for i, msg in enumerate(st.session_state.messages):
     if msg["role"] == 'user':
         render_user_message(msg["content"])
     elif  msg["role"] == 'assistant': 
+        if msg["law_info"]:
+            render_raw_info(msg["law_info"])
         render_assistant_message(msg["predicted_label"], msg["content"])
 
 
@@ -105,15 +110,23 @@ if "user_input" in st.session_state:
 
     # 분류된 라벨에 질문 저장.
     st.session_state.history[predicted_label].append(prompt)
-    
+
     # GPT PROMPT
+    with st.spinner("🔎 법률 정보 분석 중입니다..."):
+        law_info = get_law_info(predicted_label, prompt)
+    render_raw_info(law_info)
+
+
     response_stream = action_guide_agent(prompt, predicted_label)
 
     # AI 메시지 렌더 (Stream 형태)
     response_text = render_assistant_message_stream(predicted_label, response_stream)
     
     # AI 메시지 session_state에 추가
-    st.session_state.messages.append({"role": "assistant", "predicted_label": predicted_label, "content": response_text})
+    st.session_state.messages.append({"role": "assistant", 
+                                      "predicted_label": predicted_label, 
+                                      "law_info" : law_info,
+                                      "content": response_text})
 
     # user_input 삭제 후 rerun
     del st.session_state.user_input
@@ -122,9 +135,6 @@ if "user_input" in st.session_state:
 ################################################################################
 ################################[ 사 이 드 바 ]#################################
 ################################################################################
-
-from sidebar import render_history_sidebar
-
 
 # 히스토리용 딕셔너리
 if "history" not in st.session_state:

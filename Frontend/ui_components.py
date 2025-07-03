@@ -7,6 +7,12 @@ user_icon = image_base_path / 'user_icon_image.png'
 assist_icon = image_base_path / 'assistant_icon_image.png'
 title_img = image_base_path / 'logo_01.png'
 
+def render_raw_info(law_info):
+    with st.expander("📘 예측된 법률 정보", expanded=True):
+        st.markdown(f"**관련 법 조항:** {law_info['law']}")
+        st.markdown(f"**요약 설명:** {law_info['summary']}")
+        st.markdown(f"**위반 가능성:** {law_info['violation']}")
+
 def render_title_image():
     with open(title_img, "rb") as f:
         logo_data = base64.b64encode(f.read()).decode()
@@ -49,3 +55,10 @@ def render_assistant_message_stream(predicted_label, stream):
             full_response = "응답을 받지 못했습니다."
 
     return full_response
+
+def highlight_law_articles(text, article_map):
+    for article, law_text in article_map.items():
+        # <span> 태그로 마크다운 강조 및 툴팁 설정
+        tooltip = f'<span style="background-color:#ffff66;" title="{law_text.strip()}">{article}</span>'
+        text = text.replace(article, tooltip)
+    return text
