@@ -27,9 +27,28 @@ def create_vector_store(client, file_id, wait_sec=15):
     return vector_store.id
 
 
-def extract_pipc_articles(law_text):
-    raw_matches = re.findall(r'개인정보보호법\s*제\s*\d+\s*조', law_text)
-    return [m.replace(" ", "") for m in raw_matches]
+def extract_pipc_articles(text):
+    chunks = re.split(r"[,<>\n]", text)
+    current_law = None
+    result = []
+
+    for chunk in chunks:
+        chunk = chunk.strip()
+
+        match_full = re.match(r"(개인정보보호법)\s*제\s*(\d+)\s*조", chunk)
+        if match_full:
+            current_law = match_full.group(1)
+            article = f"{current_law}제{match_full.group(2)}조"
+            result.append(article)
+            continue
+
+        # "제26조"처럼 앞에 법령이 생략된 경우
+        match_partial = re.match(r"제\s*(\d+)\s*조", chunk)
+        if match_partial and current_law == "개인정보보호법":
+            article = f"{current_law}제{match_partial.group(1)}조"
+            result.append(article)
+
+    return result
 
 def clean_file_search_output(text):
     text = re.sub(r'<.*?>', '', text)
