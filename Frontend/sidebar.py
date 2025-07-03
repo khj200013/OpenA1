@@ -15,30 +15,32 @@ LABELS = [
     "개인정보 열람·정정 요구 거부",
 ]
 
+# sidebar.py
+
 def render_history_sidebar():
-    # 히스토리가 없으면 초기화
     if "history" not in st.session_state:
         st.session_state.history = { label:[] for label in LABELS }
 
     st.sidebar.empty()
     with st.sidebar:
         render_lock_icon(size_px=100, color="#2E86AB")
-        # 1) 카테고리 선택박스
-        selected = st.selectbox(
-            "📌 분류 사례",
-            options=LABELS,
-            key="selected_label"
-        )
+
+        # 1) 카테고리 선택
+        selected = st.selectbox("📌 분류 사례", options=LABELS, key="selected_label")
         st.markdown("---")
 
-        # 2) 해당 카테고리 히스토리 로드
-        q_list = st.session_state.history.get(selected, [])
+        # 2) 질문 목록 (dict 리스트)
+        entries = st.session_state.history.get(selected, [])
 
-        # 3) 출력 로직
-        if q_list:
-            st.markdown(f"### {selected}에 해당하는 질문들")
-            for i, q in enumerate(q_list, 1):
-                st.write(f"{i}. {q}")
+        if entries:
+            # 질문 리스트만 뽑아내서 selectbox
+            qs = [e["question"] for e in entries]
+            selected_q = st.selectbox("📝 저장된 질문", options=qs, key="selected_question")
+            
+            # 3) 해당 질문에 대한 답변 버튼
+            if st.button("답변 보기"):
+                # 선택된 질문을 세션에 기록
+                st.session_state.show_history = {"label": selected, "question": selected_q}
         else:
             st.write("아직 기록된 질문이 없습니다.")
 
