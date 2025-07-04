@@ -1,11 +1,40 @@
 import streamlit as st
 from pathlib import Path
 import base64
+import re
 
 image_base_path = Path(__file__).parent.parent / "static" 
 user_icon = image_base_path / 'user_icon_image.png'
 assist_icon = image_base_path / 'assistant_icon_image.png'
 title_img = image_base_path / 'logo_01.png'
+
+# HTML 태그 치환
+def clean_html_streaming(text):
+    # 1. <strong> → **bold**
+    text = re.sub(r'<\s*strong\s*>(.*?)<\s*/\s*strong\s*>', r'**\1**', text, flags=re.IGNORECASE)
+
+    # 2. <em> → *italic*
+    text = re.sub(r'<\s*em\s*>(.*?)<\s*/\s*em\s*>', r'*\1*', text, flags=re.IGNORECASE)
+
+    # 3. <br> or <br/> → 줄바꿈
+    text = re.sub(r'<\s*br\s*/?\s*>', '\n', text, flags=re.IGNORECASE)
+
+    # 4. <ul>, </ul> → 제거 (리스트만 남김)
+    text = re.sub(r'</?\s*ul\s*>', '', text, flags=re.IGNORECASE)
+
+    # 5. <li> → - 리스트 항목
+    text = re.sub(r'<\s*li\s*>', '- ', text, flags=re.IGNORECASE)
+
+    # 6. </li> → 줄바꿈
+    text = re.sub(r'</\s*li\s*>', '\n', text, flags=re.IGNORECASE)
+
+    # 7. 기타 모든 태그 제거
+    text = re.sub(r'<[^>]+>', '', text)
+
+    # 8. 중복 줄바꿈 정리
+    text = re.sub(r'\n\s*\n+', '\n\n', text)
+
+    return text
 
 def render_law_info(law_info, file_search_result):
     with st.expander("📘 예측된 법률 정보", expanded=True):
@@ -65,17 +94,11 @@ def render_assistant_message_stream(predicted_label, stream):
                 delta = chunk.choices[0].delta
                 content = getattr(delta, "content", None)
                 if content is not None:
-                    full_response += content
+                    normalized_content = clean_html_streaming(content)
+                    full_response += normalized_content
                     response_container.markdown(full_response + "▍")
         except Exception as e:
             st.error(f"❌ 스트리밍 중 오류 발생: {e}")
             full_response = "응답을 받지 못했습니다."
 
     return full_response
-
-def highlight_law_articles(text, article_map):
-    for article, law_text in article_map.items():
-        # <span> 태그로 마크다운 강조 및 툴팁 설정
-        tooltip = f'<span style="background-color:#ffff66;" title="{law_text.strip()}">{article}</span>'
-        text = text.replace(article, tooltip)
-    return text

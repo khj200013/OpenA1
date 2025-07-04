@@ -23,7 +23,7 @@ def create_vector_store(client, file_id, wait_sec=15):
     client.vector_stores.files.create(vector_store_id=vector_store.id, file_id=file_id)
     
     # 등록 완료까지 대기
-    time.sleep(wait_sec)
+    # time.sleep(wait_sec)
     return vector_store.id
 
 # 법 조항 찾아서 텍스트 분리
@@ -35,11 +35,12 @@ def extract_pipc_articles(text):
     for chunk in chunks:
         chunk = chunk.strip()
 
-        match_full = re.match(r"(개인\s*정보\s*보호\s*법|개인정보보호법)\s*제\s*(\d+)\s*조", chunk)
-        if match_full:
+        match_combined = re.match(r"(?:개인\s*정보\s*보호\s*법|개인정보보호법)\s*제\s*(\d+)\s*조(?:\s*및\s*제\s*(\d+)\s*조)?", chunk)
+        if match_combined:
             current_law = "개인정보보호법"
-            article = f"{current_law}제{match_full.group(2)}조"
-            result.append(article)
+            result.append(f"{current_law}제{match_combined.group(1)}조")
+            if match_combined.group(2):
+                result.append(f"{current_law}제{match_combined.group(2)}조")
             continue
         
         # 법조항 여러개인 경우
@@ -110,19 +111,18 @@ def file_search_query(client, user_input, vector_store_id):
     extract_context = extract_pipc_articles(user_input)
 
     if not extract_context :
-        return "질문이 입력되지 않았습니다. 질문에 법 조항명을 입력해 주시면 해당 조항의 문장만 찾아서 반환하겠습니다."
+        return "개인정보보호법 관련 법 조항이 없습니다."
 
     # 프롬프트 구성
     query = (
-        "아래 질문에 있는 법 조항만 파일 내에서 찾아서 설명 없이 문장만 반환해.\n"
-        # "만약 관련 내용이 없으면 해당 조항에 영향을 끼치는 조항을 찾아서 출력해줘\n"
-        "만약 관련 내용이 없으면 \'관련 법 조항이 개인정보보호법에 없습니다.\' 라고 말해줘"
+        "아래 질문에 있는 법 조항만 그대로 찾아줘.\n"
+        "설명, 해석, 요약 없이 문장만 반환하고, 불필요한 서술을 덧붙이지 마.\n"
         f"질문: {extract_context}"
     )
 
     # 검색 요청
     response = client.responses.create(
-        model="gpt-4.1",
+        model="gpt-4o",
         input=query,
         tools=[{
             "type": "file_search",
