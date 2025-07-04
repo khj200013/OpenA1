@@ -143,8 +143,6 @@ if "user_input" in st.session_state:
     # 유저 메시지 렌더
     render_user_message(prompt)
 
-    predict_start_time = time.time()
-
     # --------------------------
     # 1차 JSON 필터링 시도
     matched_case = filter_cases(prompt, cases)
@@ -159,32 +157,14 @@ if "user_input" in st.session_state:
         predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
         law_article = None
 
-    predict_end_time = time.time()
-
-    print(f'라벨 분류 걸린 시간 :::: {predict_end_time-predict_start_time:.2f}초')
-
+    
     # GPT PROMPT
     with st.spinner("🔎 법률 정보 분석 중입니다..."):
-        law_info_start_time = time.time()
-
-
         law_info = get_law_info(predicted_label, prompt)
-
-            
-        law_info__end_time = time.time()
-
-        print(f'법률정보 분석 걸린 시간 :::: {law_info__end_time-law_info_start_time:.2f}초')
-
-        file_search_start_time = time.time()
 
         # File Search
         file_search_result = file_search_query(client, law_info['law'], st.session_state.vector_store)
-
         
-        file_search__end_time = time.time()
-
-        print(f'파일서치 걸린 시간 :::: {file_search__end_time-file_search_start_time:.2f}초')
-
     # Law info + File search 값 출력
     render_law_info(law_info, file_search_result)
 
