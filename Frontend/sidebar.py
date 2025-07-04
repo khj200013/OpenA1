@@ -69,11 +69,6 @@ def render_history_sidebar():
                 st.session_state.user_input = selected_q
                 st.rerun()
 
-            if st.button("🔔 이 주제로 알림받기", key=f"btn_notify_{selected_label}"):
-                st.session_state.notify_requested = True
-                st.session_state.notify_label = selected_label
-                st.experimental_rerun()
-
         else:
             st.write("아직 기록된 질문이 없습니다.")
 
