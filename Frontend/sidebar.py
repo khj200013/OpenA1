@@ -46,7 +46,7 @@ def render_history_sidebar():
             key="selected_label"
         )
          # 2) 선택한 카테고리 간단 설명
-        st.markdown("**설명**")
+        st.markdown("💡 **설명**")
         st.write(CATEGORY_DESC[selected_label])
         st.markdown("---")
 
