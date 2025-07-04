@@ -36,6 +36,9 @@ from action_guide import action_guide_agent
 from law_info_ExceptDB import get_law_info
 from openai_utils import get_openai_client
 
+# JSON 필터링 유틸 임포트 추가
+from json_filtering import load_cases, filter_cases
+
 # Client 설정
 client = get_openai_client()
 
@@ -80,23 +83,10 @@ render_title_image()
 
 # 히스토리용 딕셔너리
 if "history" not in st.session_state:
-    st.session_state.history = {
-        "초상권 침해": [],
-        "동의 없는 개인정보 수집": [],
-        "목적 외 이용": [],
-        "제3자 무단 제공": [],
-        "CCTV 과잉촬영": [],
-        "정보 유출": [],
-        "파기 미이행": [],
-        "광고성 정보 수신": [],
-        "계정/비밀번호 관련 문제": [],
-        "위치정보 수집/유출": [],
-        "개인정보 열람·정정 요구 거부": []
-    }
-
-
-if "history" not in st.session_state:
     st.session_state.history = { label: [] for label in LABELS }
+
+# JSON 케이스 데이터 로드 (한 번만)
+cases = load_cases()
 
 # 질문→답변 생성 로직
 if "user_input" in st.session_state:
@@ -155,14 +145,23 @@ if "user_input" in st.session_state:
 
     predict_start_time = time.time()
 
-    # 라벨 분류
-    predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
+    # --------------------------
+    # 1차 JSON 필터링 시도
+    matched_case = filter_cases(prompt, cases)
+
+    if matched_case is not None:
+        # JSON 1차 필터링 결과 출력 및 히스토리 저장
+        predicted_label = matched_case.get("label", "알 수 없음")
+        law_article = matched_case.get("law_article", "")
+
+    else:
+        # JSON 매칭 안되면 기존 분류 + GPT 처리
+        predicted_label = classify_legal_issue(prompt, st.session_state.tokenizer, st.session_state.model)
+        law_article = None
 
     predict_end_time = time.time()
 
     print(f'라벨 분류 걸린 시간 :::: {predict_end_time-predict_start_time:.2f}초')
-
-
 
     # GPT PROMPT
     with st.spinner("🔎 법률 정보 분석 중입니다..."):
