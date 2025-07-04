@@ -20,7 +20,7 @@ def get_law_info(issue_type: str, user_input: str, law_article: str = None) -> d
     prompt += """
 이에 맞는 법적 해석, 위반 가능성, 참고 링크를 아래 포맷에 맞춰 간결하게 알려줘.
 
-- 관련 법 조항: 
+- 관련 법 조항: (개인정보 보호법이라는 텍스트 붙여서 설명해줘
 - 요약 설명: 
 - 위반 가능성: 
 - 참고 링크: (공식 사이트)
