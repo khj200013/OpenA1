@@ -5,8 +5,8 @@ from transformers import BertTokenizer, BertForSequenceClassification
 # 1. 모델과 토크나이저 불러오기
 @st.cache_resource
 def load_model():
-    tokenizer = BertTokenizer.from_pretrained("./saved_klue_bert2")
-    model = BertForSequenceClassification.from_pretrained("./saved_klue_bert2")
+    tokenizer = BertTokenizer.from_pretrained("./218")
+    model = BertForSequenceClassification.from_pretrained("./218")
     model.eval()
     return tokenizer, model
 
